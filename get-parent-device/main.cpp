@@ -186,6 +186,89 @@ PWCHAR GetExecutableName(PWCHAR pszExecutablePath) {
 	return pszExecutableName;
 }
 
+
+
+int process_func(PWCHAR pszSearchedDeviceInstanceId,PWCHAR pszParentDeviceInstanceIdPattern) {
+	// GUID to match devices by class
+	GUID guid;
+	CLSIDFromString(GUID_DISK_DRIVE_STRING, &guid);
+
+	// Get matching devices info
+	HDEVINFO devInfo = SetupDiGetClassDevs(&guid, NULL, NULL, DIGCF_PRESENT | DIGCF_ALLCLASSES);
+
+	// Device Instance ID as string
+	WCHAR szDeviceInstanceId[MAX_DEVICE_ID_LEN];
+
+	if (devInfo != INVALID_HANDLE_VALUE) {
+
+		DWORD devIndex = 0;
+		SP_DEVINFO_DATA devInfoData;
+		devInfoData.cbSize = sizeof(SP_DEVINFO_DATA);
+
+		// Loop over devices found in SetupDiGetClassDevs
+		while (SetupDiEnumDeviceInfo(devInfo, devIndex, &devInfoData)) {
+
+			// Read Device Instance ID of current device
+			memset(szDeviceInstanceId, 0, MAX_DEVICE_ID_LEN);
+			SetupDiGetDeviceInstanceId(devInfo, &devInfoData, szDeviceInstanceId, MAX_PATH, 0);
+
+			// Case insensitive comparison (because Device Instance IDs can vary?)
+			if (lstrcmpi(pszSearchedDeviceInstanceId, szDeviceInstanceId) == 0) {
+
+				// Handle of current defice instance id
+				DEVINST hCurrentDeviceInstanceId = devInfoData.DevInst;
+
+				// Handle of parent Device Instance ID
+				DEVINST hParentDeviceInstanceId;
+
+				// Parent Device Instance ID as string
+				WCHAR pszParentDeviceInstanceId[MAX_DEVICE_ID_LEN];
+
+				// Search "up" parent tree until a parent with matching Device Instance ID is found.
+				while (true) {
+
+					// Initialize / clean variables
+					memset(szDeviceInstanceId, 0, MAX_DEVICE_ID_LEN);
+					hParentDeviceInstanceId = NULL;
+
+					if (GetParentDeviceInstanceId(pszParentDeviceInstanceId, &hParentDeviceInstanceId, hCurrentDeviceInstanceId)) {
+
+						if (DeviceIdMatchesPattern(pszParentDeviceInstanceId, pszParentDeviceInstanceIdPattern)) {
+
+							// Parent Device Instance ID matches given regexp - print it out and exit
+							wprintf(L"%s\n", pszParentDeviceInstanceId);
+							return 0;
+
+						}
+
+						// Parent Device Instance ID does not match the pattern - check parent's parent
+						hCurrentDeviceInstanceId = hParentDeviceInstanceId;
+
+					}
+					else {
+
+						// There is no parent. Stop the loop.
+						break;
+
+					}
+				}
+			}
+
+			devIndex++;
+		}
+
+		if (devIndex == 0)
+		{
+			return ERR_NO_DEVICES_FOUND;
+		}
+
+	}
+	else {
+		return ERR_NO_DEVICE_INFO;
+	}
+	return 0;
+}
+
 /**
  * get-parent-device entry point.
  *
@@ -221,81 +304,5 @@ int main(void) {
 	PWCHAR pszParentDeviceInstanceIdPattern = argv[2];
 
 	
-	// GUID to match devices by class
-	GUID guid;
-	CLSIDFromString(GUID_DISK_DRIVE_STRING, &guid);
-	
-	// Get matching devices info
-	HDEVINFO devInfo = SetupDiGetClassDevs(&guid, NULL, NULL, DIGCF_PRESENT | DIGCF_ALLCLASSES);
-
-	// Device Instance ID as string
-	WCHAR szDeviceInstanceId[MAX_DEVICE_ID_LEN];
-
-	if (devInfo != INVALID_HANDLE_VALUE) {
-
-		DWORD devIndex = 0;
-		SP_DEVINFO_DATA devInfoData;
-		devInfoData.cbSize = sizeof(SP_DEVINFO_DATA);
-
-		// Loop over devices found in SetupDiGetClassDevs
-		while (SetupDiEnumDeviceInfo(devInfo, devIndex, &devInfoData)) {
-			
-			// Read Device Instance ID of current device
-			memset(szDeviceInstanceId, 0, MAX_DEVICE_ID_LEN);
-			SetupDiGetDeviceInstanceId(devInfo, &devInfoData, szDeviceInstanceId, MAX_PATH, 0);
-			
-			// Case insensitive comparison (because Device Instance IDs can vary?)
-			if (lstrcmpi(pszSearchedDeviceInstanceId, szDeviceInstanceId) == 0) {
-				
-				// Handle of current defice instance id
-				DEVINST hCurrentDeviceInstanceId = devInfoData.DevInst;
-
-				// Handle of parent Device Instance ID
-				DEVINST hParentDeviceInstanceId;
-
-				// Parent Device Instance ID as string
-				WCHAR pszParentDeviceInstanceId[MAX_DEVICE_ID_LEN];
-	
-				// Search "up" parent tree until a parent with matching Device Instance ID is found.
-				while (true) {
-
-					// Initialize / clean variables
-					memset(szDeviceInstanceId, 0, MAX_DEVICE_ID_LEN);
-					hParentDeviceInstanceId = NULL;
-			
-					if (GetParentDeviceInstanceId(pszParentDeviceInstanceId, &hParentDeviceInstanceId, hCurrentDeviceInstanceId)) {
-
-						if (DeviceIdMatchesPattern(pszParentDeviceInstanceId, pszParentDeviceInstanceIdPattern)) {
-							
-							// Parent Device Instance ID matches given regexp - print it out and exit
-							wprintf(L"%s\n", pszParentDeviceInstanceId);
-							return 0;
-							
-						}
-
-						// Parent Device Instance ID does not match the pattern - check parent's parent
-						hCurrentDeviceInstanceId = hParentDeviceInstanceId;
-
-					} else {
-
-						// There is no parent. Stop the loop.
-						break;
-
-					}
-				}
-			}
-
-			devIndex++;
-		}
-
-		if (devIndex == 0)
-		{
-			return ERR_NO_DEVICES_FOUND;
-		}
- 		
-	} else {
-		return ERR_NO_DEVICE_INFO;
-	}
-
-	return 0;
+	return process_func(pszSearchedDeviceInstanceId, pszParentDeviceInstanceIdPattern);
 }
