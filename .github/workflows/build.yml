@@ -25,11 +25,18 @@ jobs:
       - name: Build app for release
         run: msbuild get-parent-device.sln
 
+
+      - name: Compress artifacts
+        uses: edgarrc/action-7z@v1
+        with:
+            args: 7z a -t7z -mx=9 build.7z ./Debug/ ./Release/
+
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v3.1.2
         with:
           # Artifact name
           name: w32binary
           # A file, directory or wildcard pattern that describes what to upload
-          path: ./**/get-parent-device.exe
-  
+          #path: ./**/get-parent-device.exe
+          path: build.7z
+
