@@ -30,9 +30,7 @@ jobs:
 
 
       - name: Compress artifacts
-        uses: edgarrc/action-7z@v1
-        with:
-            args: 7z a -t7z -mx=9 build.7z ./Debug/ ./Release/
+        run: 7z a -t7z -mx=9 build.7z ./Debug/ ./Release/
 
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v3.1.2
