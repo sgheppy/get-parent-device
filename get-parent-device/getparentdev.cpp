@@ -84,7 +84,7 @@
 
 
 #define GUID_DISK_DRIVE_STRING L"{21EC2020-3AEA-1069-A2DD-08002B30309D}"
-
+extern "C" {
 /**
  * Finds a parent Device Instance ID for given hCurrentDeviceInstanceId and returns it's value (as string) and handle.
  *
@@ -136,7 +136,7 @@ BOOL DeviceIdMatchesPattern(_In_ PWCHAR pszDeviceInstanceId, _In_ PWCHAR pszPatt
 
 
 
-int process_func(PWCHAR pszSearchedDeviceInstanceId, PWCHAR pszParentDeviceInstanceIdPattern) {
+__declspec(dllexport) int process_func(PWCHAR pszSearchedDeviceInstanceId, PWCHAR pszParentDeviceInstanceIdPattern) {
 	// GUID to match devices by class
 	GUID guid;
 	CLSIDFromString(GUID_DISK_DRIVE_STRING, &guid);
@@ -215,4 +215,6 @@ int process_func(PWCHAR pszSearchedDeviceInstanceId, PWCHAR pszParentDeviceInsta
 		return ERR_NO_DEVICE_INFO;
 	}
 	return 0;
+}
+
 }
