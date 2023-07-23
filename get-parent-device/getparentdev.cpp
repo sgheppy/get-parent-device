@@ -136,7 +136,7 @@ BOOL DeviceIdMatchesPattern(_In_ PWCHAR pszDeviceInstanceId, _In_ PWCHAR pszPatt
 
 
 
-__declspec(dllexport) int process_func(PWCHAR pszSearchedDeviceInstanceId, PWCHAR pszParentDeviceInstanceIdPattern) {
+__declspec(dllexport) WCHAR* process_func(PWCHAR pszSearchedDeviceInstanceId, PWCHAR pszParentDeviceInstanceIdPattern) {
 	// GUID to match devices by class
 	GUID guid;
 	CLSIDFromString(GUID_DISK_DRIVE_STRING, &guid);
@@ -146,7 +146,7 @@ __declspec(dllexport) int process_func(PWCHAR pszSearchedDeviceInstanceId, PWCHA
 
 	// Device Instance ID as string
 	WCHAR szDeviceInstanceId[MAX_DEVICE_ID_LEN];
-
+	WCHAR* myerror = new WCHAR[10];
 	if (devInfo != INVALID_HANDLE_VALUE) {
 
 		DWORD devIndex = 0;
@@ -170,7 +170,7 @@ __declspec(dllexport) int process_func(PWCHAR pszSearchedDeviceInstanceId, PWCHA
 				DEVINST hParentDeviceInstanceId;
 
 				// Parent Device Instance ID as string
-				WCHAR pszParentDeviceInstanceId[MAX_DEVICE_ID_LEN];
+				WCHAR* pszParentDeviceInstanceId= new WCHAR[MAX_DEVICE_ID_LEN];
 
 				// Search "up" parent tree until a parent with matching Device Instance ID is found.
 				while (true) {
@@ -184,8 +184,8 @@ __declspec(dllexport) int process_func(PWCHAR pszSearchedDeviceInstanceId, PWCHA
 						if (DeviceIdMatchesPattern(pszParentDeviceInstanceId, pszParentDeviceInstanceIdPattern)) {
 
 							// Parent Device Instance ID matches given regexp - print it out and exit
-							wprintf(L"%s\n", pszParentDeviceInstanceId);
-							return 0;
+							//wprintf(L"- %s\n", pszParentDeviceInstanceId);
+							return pszParentDeviceInstanceId;
 
 						}
 
@@ -207,14 +207,17 @@ __declspec(dllexport) int process_func(PWCHAR pszSearchedDeviceInstanceId, PWCHA
 
 		if (devIndex == 0)
 		{
-			return ERR_NO_DEVICES_FOUND;
+			swprintf_s(myerror, 10, L"%d", 10);
+			return myerror;
 		}
 
 	}
 	else {
-		return ERR_NO_DEVICE_INFO;
+		swprintf_s(myerror, 10, L"%d", 10);
+		return myerror;
 	}
-	return 0;
+	swprintf_s(myerror, 10, L"%d", 0);
+	return myerror;
 }
 
 }
