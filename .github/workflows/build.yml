@@ -24,7 +24,7 @@ jobs:
 
 
       - name: Build app for Build
-        run: msbuild get-parent-device.sln -p:Configuration="Lib Release
+        run: msbuild get-parent-device.sln -p:Configuration="Lib Release"
 
       - name: Compress artifacts
         run: 7z a -t7z -mx=9 build.7z  "./Lib Release"
