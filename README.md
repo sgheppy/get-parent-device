@@ -1,3 +1,8 @@
+<a href="https://scan.coverity.com/projects/sgheppy-get-parent-device">
+  <img alt="Coverity Scan Build Status"
+       src="https://img.shields.io/coverity/scan/28879.svg"/>
+</a>
+
 # get-parent-device
 
 This program finds `Device Instance ID` of a *parent* of a Device given by
